@@ -28,7 +28,7 @@ To play the game:
 3. Enjoy the game!
 
 ## Future Enhancements
-- **Start/Pause Functionality:** Addition of start and pause buttons for better game control.
+- **Visual Improvments:** greater visual improvments to look of page and game itself, showcasing interactive front-end development.
 - **Advanced Graphics:** More sophisticated graphics for the snake and apples.
 - **Multiple Levels:** Introduction of various difficulty levels.
 - **Mobile Compatibility:** Adaptation for full mobile responsiveness.

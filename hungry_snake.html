@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>cool snake game</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        .wrapper {
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .scoreboard {
+            margin-bottom: 15px;
+        }
+
+        #snakeGame {
+            border: 2px solid #333;
+            background-color: #000;
+        }
+
+        #score, #high-score {
+            font-size: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <h1>Hungry Snake</h1>
+        <div class="scoreboard">
+            <div id="score">Score: <span>0</span></div>
+            <div id="high-score">High Score: <span>0</span></div>
+            <button id="startButton">Start Game</button>
+            <button id="pauseButton">Pause Game</button>
+
+        </div>
+        <canvas id="snakeGame" width="400" height="400"></canvas>
+
+    </div>
+
+
+    <audio id="eatSound" src="audio\apple_munch.mp3" preload="auto"></audio>
+    <audio id="gameOverSound" src="audio\negative_beeps.mp3" preload="auto"></audio>
+    
+
+    <script>
+        // Main game initialization
+        window.onload = function () {
+            canvas = document.getElementById("snakeGame");
+            contex = canvas.getContext("2d");
+            document.addEventListener("keydown", keyPush);
+            //setInterval(game, 1000 / 15);
+            //var gameInterval = setInterval(game, gameSpeed);
+            window.requestAnimationFrame(main);
+        }
+
+        // Game variables
+        xPosition = yPosition = 10;
+        gridSize = tileCount = 20;
+        xApple = yApple = 15;
+        xVelocity = yVelocity = 0;
+        trail = [];
+        tail = 5;
+        var gameSpeed = 1000 / 15;
+        let lastRenderTime = 0;
+        let snakeSpeed = 5; // Initial speed: number of times the snake moves per second
+
+        // Load sound effects
+        //var eatSound = new Audio('apple_munch.mp3');
+        //var gameOverSound = new Audio('negative_beeps.mp3');
+        //eatSound.volume = 1; // Maximum volume
+        //gameOverSound.volume = 1; // Maximum volume
+
+
+        let isGameRunning = true;
+
+        document.getElementById("startButton").addEventListener("click", function () {
+            document.getElementById('eatSound').play();
+            if (!isGameRunning) {
+                isGameRunning = true;
+                window.requestAnimationFrame(main);
+            }
+        });
+
+        document.getElementById("pauseButton").addEventListener("click", function () {
+            isGameRunning = false;
+        });
+
+        function main(currentTime) {
+            if (!isGameRunning) {
+                return; // Stop the loop if the game is not running
+            }
+            window.requestAnimationFrame(main);
+            const secondsSinceLastRender = (currentTime - lastRenderTime) / 1000;
+            if (secondsSinceLastRender < 1 / snakeSpeed) return;
+
+            lastRenderTime = currentTime;
+            game();
+        }
+
+        function game() {
+            xPosition += xVelocity;
+            yPosition += yVelocity;
+
+            wrapSnake();
+
+            //background
+            drawBackground();
+
+            //snake
+            drawSnake();
+
+            //check apple is eaten and create a new one
+            if (xApple == xPosition && yApple == yPosition) {
+                consumeApple();
+                //SNAKE_SPEED += 0.5; // Increase speed
+            }
+            //apple
+            drawApple();
+
+
+        }
+
+        // Wrapping snake around when it goes off the canvas
+        function wrapSnake() {
+            if (xPosition < 0) {
+                xPosition = tileCount - 1;
+            }
+            if (xPosition > tileCount - 1) {
+                xPosition = 0;
+            }
+            if (yPosition < 0) {
+                yPosition = tileCount - 1;
+            }
+            if (yPosition > tileCount - 1) {
+                yPosition = 0;
+            }
+        }
+
+        // Drawing background
+        function drawBackground() {
+            contex.fillStyle = "black";
+            contex.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Drawing snake
+        function drawSnake() {
+            contex.fillStyle = "lime";
+            for (var i = 0; i < trail.length; i++) {
+                contex.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
+                // Check if snake eats itself, only if it is moving
+                if (xVelocity !== 0 || yVelocity !== 0) {
+                    if (trail[i].x == xPosition && trail[i].y == yPosition && tail > 5) {
+                        gameOver();
+                    }
+                }
+            }
+
+            trail.push({ x: xPosition, y: yPosition });
+            while (trail.length > tail) {
+                trail.shift();
+            }
+        }
+
+
+        // Handling apple consumption
+        function consumeApple() {
+            //console.log("consumeApple function called"); // Debugging statement
+            //'eatSound.play();
+            document.getElementById('eatSound').play();
+            tail++;
+            xApple = Math.floor(Math.random() * tileCount);
+            yApple = Math.floor(Math.random() * tileCount);
+            incrementScore();
+            snakeSpeed += 0.5; // Increase speed
+
+        }
+
+        // Drawing apple
+        function drawApple() {
+            //context.drawImage(appleImg, xApple * gridSize, yApple * gridSize, gridSize, gridSize);
+            contex.fillStyle = "red";
+            contex.fillRect(xApple * gridSize, yApple * gridSize, gridSize - 2, gridSize - 2);
+        }
+        //make snake move on arrow presses
+        function keyPush(evt) {
+
+            //if (!isGameRunning) return;
+
+            switch (evt.keyCode) {
+                case 37:
+                    if (xVelocity == 1) return; // Prevent moving left if currently moving right
+                    xVelocity = -1;
+                    yVelocity = 0;
+                    break;
+                case 38:
+                    if (yVelocity == 1) return; // Prevent moving up if currently moving down
+                    xVelocity = 0;
+                    yVelocity = -1;
+                    break;
+                case 39:
+                    if (xVelocity == -1) return; // Prevent moving right if currently moving left
+                    xVelocity = 1;
+                    yVelocity = 0;
+                    break;
+                case 40:
+                    if (yVelocity == -1) return; // Prevent moving down if currently moving up
+                    xVelocity = 0;
+                    yVelocity = 1;
+                    break;
+            }
+        }
+
+        const store = {
+            score: 0,
+            topScore: 0
+        }
+
+        //increase the score each time apple is eaten
+        function incrementScore() {
+            store.score += 20;
+            document.querySelector('#score span').innerHTML = store.score;
+        }
+
+        // undate high score each time snake dies
+        function setTopScore() {
+            console.log(store.topScore);
+            if (store.score > store.topScore) {
+                store.topScore = store.score;
+                document.querySelector('#high-score').innerHTML = `High score: <span>${store.topScore}</span>`;
+            }
+        }
+
+        // reset score when snake dies
+        function resetScore() {
+            store.score = 0;
+            document.querySelector('#score').innerHTML = `Score: <span>${store.score} </span>`;
+
+        }
+
+
+
+        function gameOver() {
+            document.getElementById('gameOverSound').play();
+            setTopScore()
+            isGameRunning = false;
+            alert("Game Over. Your score: " + store.score);
+            resetGame();
+        }
+
+        function resetGame() {
+            // Reset game variables
+            xPosition = yPosition = 10;
+            xVelocity = yVelocity = 0;
+            trail = [];
+            tail = 5;
+            snakeSpeed = 5;
+            lastRenderTime = 0;
+            store.score = 0;
+            resetScore()
+            //updateScore();
+        }
+    </script>
+</body>
+</html>
